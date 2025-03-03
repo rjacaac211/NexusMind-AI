@@ -1,6 +1,14 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
+import {
+  PaperAirplaneIcon,
+  ArrowPathIcon,
+  MicrophoneIcon,
+  StopIcon,
+  SunIcon,
+  MoonIcon,
+} from "@heroicons/react/24/outline";
 
 const ChatBox = () => {
   // ------------- STATE VARIABLES -------------
@@ -16,7 +24,26 @@ const ChatBox = () => {
   const [cumulativeFeedback, setCumulativeFeedback] = useState("");
   const [topic, setTopic] = useState("");
 
-  // ------------- SPEECH TO TEXT -------------
+  // ------------- DARK MODE STATE -------------
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => !prev);
+  };
+
+  // ------------- SPEECH TO TEXT STATES -------------
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -54,13 +81,13 @@ const ChatBox = () => {
         } else {
           const newCumulative = cumulativeFeedback + "\n" + userMessage;
           setCumulativeFeedback(newCumulative);
+
           const response = await axios.post("http://localhost:8000/api/resume", {
             topic,
             feedback: newCumulative,
           });
           const botReply = response.data.result || "No updated report plan generated.";
           setMessages((prev) => [...prev, { sender: "Nexus", text: botReply }]);
-          setStage("feedback");
         }
       }
     } catch (error) {
@@ -87,6 +114,7 @@ const ChatBox = () => {
     if (!isRecording) {
       setIsRecording(true);
       audioChunksRef.current = [];
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mediaRecorder = new MediaRecorder(stream);
@@ -136,13 +164,25 @@ const ChatBox = () => {
 
   // ------------- RENDER COMPONENT -------------
   return (
-    <div className="max-w-2xl mx-auto mt-8">
-      {/* Chat area container */}
-      <div className="rounded-lg p-4 h-80 overflow-y-auto border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-        {messages.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-300">Conversation will appear here...</p>
+    <>
+      {/* Dark Mode Toggle Button - pinned top-right, high z-index */}
+      <button
+        onClick={toggleDarkMode}
+        className="fixed top-30 left-10 p-3 rounded-full 
+                   bg-gray-300 dark:bg-gray-700 text-black dark:text-white 
+                   shadow-lg z-50"
+      >
+        {darkMode ? (
+          <SunIcon className="w-6 h-6" />
         ) : (
-          messages.map((msg, idx) => {
+          <MoonIcon className="w-6 h-6" />
+        )}
+      </button>
+
+      {/* Main chat area with top/bottom padding */}
+      <div className="pt-16 pb-20">
+        <div className="max-w-3xl mx-auto p-4">
+          {messages.map((msg, idx) => {
             const isUser = msg.sender === "You";
             return (
               <div
@@ -150,7 +190,7 @@ const ChatBox = () => {
                 className={`mb-4 flex ${isUser ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`rounded-lg px-3 py-2 max-w-xs break-words ${
+                  className={`rounded-lg px-3 py-2 max-w-xl break-words ${
                     isUser
                       ? "bg-blue-600 text-white self-end"
                       : "bg-gray-200 dark:bg-gray-700 dark:text-gray-100"
@@ -165,43 +205,59 @@ const ChatBox = () => {
                 </div>
               </div>
             );
-          })
-        )}
+          })}
+        </div>
       </div>
 
-      {/* Input row */}
-      <div className="flex mt-4">
-        <input
-          type="text"
-          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-l-lg bg-white dark:bg-gray-800 text-black dark:text-white focus:outline-none"
-          placeholder="Type your message..."
-          value={chatInput}
-          onChange={(e) => setChatInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isLoading || stage === "final"}
-        />
-        <button
-          onClick={handleSendMessage}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r-lg disabled:opacity-50"
-          disabled={isLoading || stage === "final"}
-        >
-          {isLoading ? "Processing..." : "Send"}
-        </button>
-      </div>
+      {/* Fixed bottom chat input */}
+      <div className="fixed bottom-0 left-0 w-full bg-gray-100 dark:bg-gray-800 
+                      border-t border-gray-300 dark:border-gray-700">
+        <div className="max-w-3xl mx-auto p-4 flex items-center">
+          {/* Text input */}
+          <input
+            type="text"
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 
+                       rounded-l-lg bg-white dark:bg-gray-700 
+                       text-black dark:text-white focus:outline-none"
+            placeholder="Type your message..."
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading || stage === "final"}
+          />
 
-      {/* Speech-to-text button */}
-      <div className="flex mt-2">
-        <button
-          onClick={handleRecordToggle}
-          className={`${
-            isRecording ? "bg-red-600" : "bg-green-600"
-          } text-white px-4 py-2 rounded hover:opacity-90 disabled:opacity-50`}
-          disabled={isLoading || stage === "final"}
-        >
-          {isRecording ? "Stop Recording" : "Start Recording"}
-        </button>
+          {/* Send Button */}
+          <button
+            onClick={handleSendMessage}
+            className="p-2 rounded-full bg-blue-600 text-white ml-2 
+                       disabled:opacity-50 flex items-center justify-center"
+            disabled={isLoading || stage === "final"}
+          >
+            {isLoading ? (
+              <ArrowPathIcon className="w-5 h-5 animate-spin" />
+            ) : (
+              <PaperAirplaneIcon className="w-5 h-5 transform" />
+            )}
+          </button>
+
+          {/* Record Toggle Button */}
+          <button
+            onClick={handleRecordToggle}
+            className={`ml-2 p-2 rounded-full text-white flex items-center justify-center 
+                        disabled:opacity-50 ${
+              isRecording ? "bg-blue-600" : "bg-gray-600"
+            }`}
+            disabled={isLoading || stage === "final"}
+          >
+            {isRecording ? (
+              <StopIcon className="w-5 h-5" />
+            ) : (
+              <MicrophoneIcon className="w-5 h-5" />
+            )}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

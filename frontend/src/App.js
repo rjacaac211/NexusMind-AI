@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -19,7 +20,11 @@ function App() {
               onClick={() => setDarkMode(!darkMode)}
               className="mb-4 bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-4 py-2 rounded-md"
             >
-              {darkMode ? 'Light' : 'Dark'}
+              {darkMode ? (
+                <SunIcon className="w-5 h-5" />
+              ) : (
+                <MoonIcon className="w-5 h-5" />
+              )}
             </button>
 
             <Routes>
