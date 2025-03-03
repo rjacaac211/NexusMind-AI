@@ -10,8 +10,11 @@ import {
   MicrophoneIcon,
   StopIcon,
   SunIcon,
-  MoonIcon,
+  MoonIcon
 } from "@heroicons/react/24/outline";
+
+// 1. Import the utility
+import { downloadPDF } from "../utils/downloadPdf";
 
 const ChatBox = () => {
   // ------------- STATE VARIABLES -------------
@@ -26,6 +29,9 @@ const ChatBox = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [cumulativeFeedback, setCumulativeFeedback] = useState("");
   const [topic, setTopic] = useState("");
+
+  // ------------- STORE the Final Report for PDF -------------
+  const [finalReportText, setFinalReportText] = useState("");
 
   // ------------- DARK MODE STATE -------------
   const [darkMode, setDarkMode] = useState(
@@ -75,7 +81,11 @@ const ChatBox = () => {
             topic,
             feedback: "yes",
           });
+
           const report = response.data.result || "No final report generated.";
+          // Save the final report so we can optionally download it as PDF
+          setFinalReportText(report);
+
           setMessages((prev) => [
             ...prev,
             { sender: "Nexus", text: "Here is the final report:\n" + report }
@@ -168,7 +178,7 @@ const ChatBox = () => {
   // ------------- RENDER COMPONENT -------------
   return (
     <>
-      {/* Dark Mode Toggle Button - pinned top-right, high z-index */}
+      {/* Dark Mode Toggle Button */}
       <button
         onClick={toggleDarkMode}
         className="fixed top-30 left-10 p-3 rounded-full 
@@ -182,7 +192,7 @@ const ChatBox = () => {
         )}
       </button>
 
-      {/* Main chat area with top/bottom padding */}
+      {/* Main chat area */}
       <div className="pt-16 pb-20">
         <div className="max-w-3xl mx-auto p-4">
           {messages.map((msg, idx) => {
@@ -219,10 +229,8 @@ const ChatBox = () => {
       </div>
 
       {/* Fixed bottom chat input */}
-      <div className="fixed bottom-0 left-0 w-full bg-gray-100 dark:bg-gray-800 
-                      border-t border-gray-300 dark:border-gray-700">
+      <div className="fixed bottom-0 left-0 w-full bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700">
         <div className="max-w-3xl mx-auto p-4 flex items-center">
-          {/* Text input */}
           <input
             type="text"
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 
@@ -264,6 +272,17 @@ const ChatBox = () => {
               <MicrophoneIcon className="w-5 h-5" />
             )}
           </button>
+
+          {/* Download PDF button visible only when finalReportText is present */}
+          {finalReportText && (
+            <button
+              onClick={() => downloadPDF(finalReportText)}
+              className="ml-4 px-4 py-2 bg-blue-600 text-white rounded
+                         hover:bg-blue-700"
+            >
+              Download Final Report (PDF)
+            </button>
+          )}
         </div>
       </div>
     </>

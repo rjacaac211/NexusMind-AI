@@ -1,6 +1,9 @@
 import os
 import httpx
+import pdfkit
+import markdown
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.core.deep_research_agent import run_agent
@@ -100,6 +103,35 @@ async def transcribe_audio(
     )
 
     return {"transcript": transcript}
+
+# ----------------- Generate PDF Endpoint ----------------- #
+class PDFRequest(BaseModel):
+    final_report: str
+
+@router.post("/generate_pdf")
+def generate_pdf(payload: PDFRequest):
+    """
+    Convert the final report (Markdown) to a PDF and return it.
+    """
+    try:
+        # 1. Convert Markdown -> HTML
+        html_content = markdown.markdown(
+            payload.final_report,
+            extensions=["tables", "fenced_code", "nl2br"]
+            )
+
+        # 2. Generate PDF bytes in memory
+        # The second arg "False" tells pdfkit to return the bytes rather than write to file
+        pdf_bytes = pdfkit.from_string(html_content, False)
+
+        # 3. Return PDF as a response
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'inline; filename="final_report.pdf"'}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # # ----------------- Save Chat History Endpoint ----------------- #
 # class ChatMessage(BaseModel):
