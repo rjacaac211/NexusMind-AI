@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import remarkBreaks from "remark-breaks";
 import {
   PaperAirplaneIcon,
   ArrowPathIcon,
@@ -198,7 +201,13 @@ const ChatBox = () => {
                 >
                   <div className="text-sm font-semibold mb-1">{msg.sender}</div>
                   {msg.sender === "Nexus" ? (
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    <ReactMarkdown
+                      className="prose dark:prose-invert max-w-none"
+                      remarkPlugins={[remarkGfm, remarkBreaks]}
+                      rehypePlugins={[rehypeHighlight]}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
                   ) : (
                     <div>{msg.text}</div>
                   )}
