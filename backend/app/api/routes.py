@@ -1,11 +1,9 @@
 import os
-# import httpx
-# from datetime import datetime
+import httpx
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 
-from app.core.deep_research_agent import run_agent_start, run_agent_resume
-# from app.core.chat_history_db import db
+from app.core.deep_research_agent import run_agent
 
 router = APIRouter()
 
@@ -18,13 +16,14 @@ async def start_research(req: ResearchRequest):
     if not req.topic.strip():
         raise HTTPException(status_code=400, detail="Topic is required.")
     try:
-        bot_message = await run_agent_start(req.topic)
+        bot_message = await run_agent(req.topic)
         return {"bot_message": bot_message}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 # ----------------- Resume Research Endpoint ----------------- #
 class ResumeRequest(BaseModel):
+    topic: str
     feedback: str
 
 @router.post("/resume")
@@ -32,8 +31,8 @@ async def resume_research(req: ResumeRequest):
     if not req.feedback.strip():
         raise HTTPException(status_code=400, detail="Feedback is required.")
     try:
-        report = await run_agent_resume(req.feedback)
-        return {"report": report}
+        result = await run_agent(req.topic, req.feedback)
+        return {"result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
