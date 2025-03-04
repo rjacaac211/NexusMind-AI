@@ -57,6 +57,7 @@ This multi-agent approach ensures a **customizable, iterative, and high-quality*
 - **FastAPI** (Python) – High-performance API framework.
 - **LangGraph & LangChain** – Handles deep research agent creation.
 - **OpenAI API** – Powering language generation.
+- **Tavily Search API** – Fetches relevant web content for research.
 - **Deepgram API** – Speech-to-text transcription.
 - **PDFKit & Markdown** – Generating structured reports in PDF format.
 - **Docker** – Containerization for easy deployment.
