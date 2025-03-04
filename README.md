@@ -10,6 +10,48 @@
 - **Dark Mode**: User-friendly theme switching between light and dark modes.
 - **Automatic Conversation Reset**: Restarts the conversation while preserving the final report.
 
+## How It Works  
+
+1. **Start a Research Session**  
+   - The user enters a research topic in the chat.  
+   - The AI generates an initial structured outline and report plan.  
+
+2. **Iterate with Feedback**  
+   - The AI asks for feedback before finalizing the report.  
+   - The user can request refinements or approve the current version.  
+
+3. **Generate the Final Report**  
+   - Once approved, the AI completes the research report.  
+   - The report is structured and formatted based on best practices.  
+
+4. **Download the Report as a PDF**  
+   - The user can download the report as a well-formatted PDF.  
+
+5. **Restart the Conversation**  
+   - The system clears previous interactions and allows the user to start fresh with a new topic while preserving access to previous reports.  
+
+## Deep Research Agent Workflow  
+
+NexusMind AI uses **two specialized agents** to generate high-quality research reports:  
+
+1. **Report Planning Agent** – This agent generates a structured **report plan** and sections based on the given topic.  
+2. **Final Report Generation Agent** – Once the research is complete, this agent **compiles and refines** the sections into a well-structured final report.  
+
+The diagram below illustrates the complete workflow:  
+
+![NexusMind AI Research Workflow](docs/graph.png)  
+
+### Workflow Breakdown  
+1. **Generate Report Plan** – The AI structures an initial plan for the research report.  
+2. **Incorporate Human Feedback** – Users review and refine the plan before proceeding.  
+3. **Conduct Web Research** – The AI generates search queries, gathers relevant information, and writes sections iteratively.  
+4. **Assemble Completed Sections** – All researched sections are gathered together.  
+5. **Write Final Sections** – The AI compiles the sections into a cohesive report.  
+6. **Compile Final Report** – The final document is structured and prepared for download.  
+
+This multi-agent approach ensures a **customizable, iterative, and high-quality** research generation process.  
+
+
 ## Technologies Used
 ### Backend (FastAPI)
 - **FastAPI** (Python) – High-performance API framework.
