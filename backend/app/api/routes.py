@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from app.core.deep_research_agent import run_agent
+from app.core.deep_research_agent import run_agent, reset_agent
 
 router = APIRouter()
 
@@ -64,26 +64,22 @@ async def transcribe_audio(
             detail="Deepgram API key is missing on the server."
         )
 
-    # Example: Using Deepgram's /listen endpoint
     headers = {
         "Authorization": f"Token {DEEPGRAM_API_KEY}",
         "Content-Type": "application/octet-stream"
     }
 
     params = {
-        "model": "nova",        # or 'general', etc.
+        "model": "nova",
         "punctuate": "true",
-        # "language": "en",     # optionally specify language
-        # Additional STT params as needed...
     }
 
-    # Make async call to Deepgram
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://api.deepgram.com/v1/listen",
             headers=headers,
             params=params,
-            content=audio_bytes  # raw audio
+            content=audio_bytes
         )
 
     if response.status_code != 200:
@@ -94,7 +90,6 @@ async def transcribe_audio(
         )
 
     data = response.json()
-    # Extract transcript from Deepgram response
     transcript = (
         data.get("results", {})
             .get("channels", [{}])[0]
@@ -118,18 +113,34 @@ def generate_pdf(payload: PDFRequest):
         html_content = markdown.markdown(
             payload.final_report,
             extensions=["tables", "fenced_code", "nl2br"]
-            )
+        )
+        # Debug: Log the generated HTML (you may remove or comment this out in production)
+        print("Generated HTML:", html_content)
 
-        # 2. Generate PDF bytes in memory
-        # The second arg "False" tells pdfkit to return the bytes rather than write to file
-        pdf_bytes = pdfkit.from_string(html_content, False)
+        # 2. Configure pdfkit with the proper wkhtmltopdf binary path.
+        # Adjust the path below if your container/system installs it elsewhere.
+        config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 
-        # 3. Return PDF as a response
+        # 3. Generate PDF bytes in memory
+        pdf_bytes = pdfkit.from_string(html_content, False, configuration=config)
+        if not pdf_bytes:
+            raise ValueError("PDF conversion returned empty content.")
+
+        # 4. Return PDF as a response
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={"Content-Disposition": 'inline; filename="final_report.pdf"'}
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+# ----------------- Reset Agent Endpoint ----------------- #
+@router.post("/reset")
+async def reset_agent_endpoint():
+    try:
+        result = await reset_agent()
+        return {"message": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -66,3 +66,9 @@ async def run_agent(topic: str, feedback: str = None) -> str:
                         break
             return final_report or "No final report generated."
 
+async def reset_agent():
+    """"Reset the agent's memory and recompile the graph."""
+    memory.clear()
+    global graph
+    graph = builder.compile(checkpointer=memory)
+    return "Agent memory cleared."

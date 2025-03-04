@@ -21,7 +21,7 @@ const ChatBox = () => {
   const [messages, setMessages] = useState([
     {
       sender: "Nexus",
-      text: "Hi, I am Nexus, a deep research agent.\nPlease provide a topic."
+      text: "Hi, I am Nexus, your deep research partner.\nTo start the research, please provide a topic."
     }
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -57,6 +57,30 @@ const ChatBox = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
+  // ------------- RESET CONVERSATION (Including Backend Reset) -------------
+  const resetConversation = async () => {
+    try {
+      await axios.post("http://localhost:8000/api/reset");
+    } catch (error) {
+      console.error("Error resetting backend agent:", error);
+    } finally {
+      // Append a separator message to mark the start of a new conversation.
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "Nexus",
+          text: "Let's do another topic. What would you like to research?"
+        }
+      ]);
+      // Reset conversation state for the agent,
+      // but DO NOT clear finalReportText so that the PDF remains available.
+      setChatInput("");
+      setStage("start");
+      setCumulativeFeedback("");
+      setTopic("");
+    }
+  };
+
   // ------------- SEND MESSAGE LOGIC -------------
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
@@ -86,11 +110,18 @@ const ChatBox = () => {
           // Save the final report so we can optionally download it as PDF
           setFinalReportText(report);
 
+          // Push the final report message with a flag for rendering the download button
           setMessages((prev) => [
             ...prev,
-            { sender: "Nexus", text: "Here is the final report:\n" + report }
+            {
+              sender: "Nexus",
+              text: "Here is the final report:\n" + report,
+              isFinalReport: true
+            }
           ]);
-          setStage("final");
+
+          // Automatically reset conversation after final report is generated.
+          resetConversation();
         } else {
           const newCumulative = cumulativeFeedback + "\n" + userMessage;
           setCumulativeFeedback(newCumulative);
@@ -221,6 +252,17 @@ const ChatBox = () => {
                   ) : (
                     <div>{msg.text}</div>
                   )}
+                  {/* If this is the final report message, render the download button right here */}
+                  {msg.isFinalReport && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => downloadPDF(finalReportText)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Download Final Report (PDF)
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -240,7 +282,7 @@ const ChatBox = () => {
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isLoading || stage === "final"}
+            disabled={isLoading}
           />
 
           {/* Send Button */}
@@ -248,7 +290,7 @@ const ChatBox = () => {
             onClick={handleSendMessage}
             className="p-2 rounded-full bg-blue-600 text-white ml-2 
                        disabled:opacity-50 flex items-center justify-center"
-            disabled={isLoading || stage === "final"}
+            disabled={isLoading}
           >
             {isLoading ? (
               <ArrowPathIcon className="w-5 h-5 animate-spin" />
@@ -264,7 +306,7 @@ const ChatBox = () => {
                         disabled:opacity-50 ${
               isRecording ? "bg-blue-600" : "bg-gray-600"
             }`}
-            disabled={isLoading || stage === "final"}
+            disabled={isLoading}
           >
             {isRecording ? (
               <StopIcon className="w-5 h-5" />
@@ -272,17 +314,6 @@ const ChatBox = () => {
               <MicrophoneIcon className="w-5 h-5" />
             )}
           </button>
-
-          {/* Download PDF button visible only when finalReportText is present */}
-          {finalReportText && (
-            <button
-              onClick={() => downloadPDF(finalReportText)}
-              className="ml-4 px-4 py-2 bg-blue-600 text-white rounded
-                         hover:bg-blue-700"
-            >
-              Download Final Report (PDF)
-            </button>
-          )}
         </div>
       </div>
     </>
