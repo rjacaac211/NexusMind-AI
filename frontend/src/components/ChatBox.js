@@ -93,6 +93,11 @@ const ChatBox = () => {
     try {
       if (stage === "start") {
         setTopic(userMessage);
+        // Show a progress message while drafting the report plan.
+        setMessages((prev) => [
+          ...prev,
+          { sender: "Nexus", text: "Drafting a report plan. Please wait." }
+        ]);
         const response = await axios.post("http://localhost:8000/api/start_research", { topic: userMessage });
         const { bot_message, approval_required } = response.data;
         setMessages((prev) => [
@@ -192,6 +197,11 @@ const ChatBox = () => {
       // User approved the report plan.
       try {
         setIsLoading(true);
+        // Show a message while creating the final report.
+        setMessages((prev) => [
+          ...prev,
+          { sender: "Nexus", text: "Creating the final report. Please wait." }
+        ]);
         const response = await axios.post("http://localhost:8000/api/resume", { topic, approved: true });
         const { bot_message } = response.data;
         setFinalReportText(bot_message);
@@ -314,7 +324,7 @@ const ChatBox = () => {
             onClick={handleRecordToggle}
             className={`ml-2 p-2 rounded-full text-white flex items-center justify-center 
                         disabled:opacity-50 ${
-              isRecording ? "bg-blue-600" : "bg-gray-600"
+              isRecording ? "bg-gray-600" : "bg-blue-600"
             }`}
             disabled={isLoading || approvalPending}
           >
