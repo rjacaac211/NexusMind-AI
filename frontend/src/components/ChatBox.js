@@ -29,9 +29,8 @@ const ChatBox = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [cumulativeFeedback, setCumulativeFeedback] = useState("");
   const [topic, setTopic] = useState("");
-
-  // ------------- STORE the Final Report for PDF -------------
   const [finalReportText, setFinalReportText] = useState("");
+  const [approvalPending, setApprovalPending] = useState(false);
 
   // ------------- DARK MODE STATE -------------
   const [darkMode, setDarkMode] = useState(
@@ -78,12 +77,13 @@ const ChatBox = () => {
       setStage("start");
       setCumulativeFeedback("");
       setTopic("");
+      setApprovalPending(false);
     }
   };
 
   // ------------- SEND MESSAGE LOGIC -------------
   const handleSendMessage = async () => {
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || approvalPending) return; // Prevent sending if input is empty or approval is pending
     const userMessage = chatInput.trim();
 
     setMessages((prev) => [...prev, { sender: "You", text: userMessage }]);
@@ -93,46 +93,25 @@ const ChatBox = () => {
     try {
       if (stage === "start") {
         setTopic(userMessage);
-        const response = await axios.post("http://localhost:8000/api/start_research", {
-          topic: userMessage,
-        });
-        const botReply = response.data.bot_message || "No report plan generated.";
-        setMessages((prev) => [...prev, { sender: "Nexus", text: botReply }]);
+        const response = await axios.post("http://localhost:8000/api/start_research", { topic: userMessage });
+        const { bot_message, approval_required } = response.data;
+        setMessages((prev) => [
+          ...prev,
+          { sender: "Nexus", text: bot_message, approvalRequired: approval_required }
+        ]);
+        setApprovalPending(approval_required);
         setStage("feedback");
       } else if (stage === "feedback") {
-        if (userMessage.toLowerCase() === "yes") {
-          const response = await axios.post("http://localhost:8000/api/resume", {
-            topic,
-            feedback: "yes",
-          });
-
-          const report = response.data.result || "No final report generated.";
-          // Save the final report so we can optionally download it as PDF
-          setFinalReportText(report);
-
-          // Push the final report message with a flag for rendering the download button
-          setMessages((prev) => [
-            ...prev,
-            {
-              sender: "Nexus",
-              text: "Here is the final report:\n" + report,
-              isFinalReport: true
-            }
-          ]);
-
-          // Automatically reset conversation after final report is generated.
-          resetConversation();
-        } else {
-          const newCumulative = cumulativeFeedback + "\n" + userMessage;
-          setCumulativeFeedback(newCumulative);
-
-          const response = await axios.post("http://localhost:8000/api/resume", {
-            topic,
-            feedback: newCumulative,
-          });
-          const botReply = response.data.result || "No updated report plan generated.";
-          setMessages((prev) => [...prev, { sender: "Nexus", text: botReply }]);
-        }
+        // Here, if approval is not pending, user is providing free-text feedback.
+        const newCumulative = cumulativeFeedback + "\n" + userMessage;
+        setCumulativeFeedback(newCumulative);
+        const response = await axios.post("http://localhost:8000/api/resume", { topic, approved: false, feedback: newCumulative });
+        const { bot_message, approval_required } = response.data;
+        setMessages((prev) => [
+          ...prev,
+          { sender: "Nexus", text: bot_message, approvalRequired: approval_required }
+        ]);
+        setApprovalPending(approval_required);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -206,6 +185,35 @@ const ChatBox = () => {
     }
   };
 
+  // ------------- HANDLE APPROVAL BUTTON CLICKS -------------
+  const handleApproval = async (approved) => {
+    setApprovalPending(false);
+    if (approved) {
+      // User approved the report plan.
+      try {
+        setIsLoading(true);
+        const response = await axios.post("http://localhost:8000/api/resume", { topic, approved: true });
+        const { bot_message } = response.data;
+        setFinalReportText(bot_message);
+        setMessages((prev) => [
+          ...prev,
+          { sender: "Nexus", text: "Here is the final report:\n" + bot_message, isFinalReport: true }
+        ]);
+        resetConversation();
+      } catch (error) {
+        console.error("Approval error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // User did not approve; prompt for feedback.
+      setMessages((prev) => [
+        ...prev,
+        { sender: "Nexus", text: "Please share your feedback and let me know what adjustments you'd like." }
+      ]);
+    }
+  };
+
   // ------------- RENDER COMPONENT -------------
   return (
     <>
@@ -216,11 +224,7 @@ const ChatBox = () => {
                    bg-gray-300 dark:bg-gray-700 text-black dark:text-white 
                    shadow-lg z-50"
       >
-        {darkMode ? (
-          <SunIcon className="w-6 h-6" />
-        ) : (
-          <MoonIcon className="w-6 h-6" />
-        )}
+        {darkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
       </button>
 
       {/* Main chat area */}
@@ -229,12 +233,9 @@ const ChatBox = () => {
           {messages.map((msg, idx) => {
             const isUser = msg.sender === "You";
             return (
-              <div
-                key={idx}
-                className={`mb-4 flex ${isUser ? "justify-end" : "justify-start"}`}
-              >
+              <div key={idx} className={`mb-4 flex ${isUser ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`rounded-lg px-3 py-2 max-w-xl break-words ${
+                  className={`rounded-lg px-3 py-2 max-w-xl break-words whitespace-pre-line ${
                     isUser
                       ? "bg-blue-600 text-white self-end"
                       : "bg-gray-200 dark:bg-gray-700 dark:text-gray-100"
@@ -267,6 +268,16 @@ const ChatBox = () => {
               </div>
             );
           })}
+          {approvalPending && (
+            <div className="flex space-x-2 mt-2 justify-center">
+              <button onClick={() => handleApproval(true)} className="px-4 py-2 bg-blue-600 text-white rounded">
+                Yes
+              </button>
+              <button onClick={() => handleApproval(false)} className="px-4 py-2 bg-gray-600 text-white rounded">
+                No
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -282,7 +293,7 @@ const ChatBox = () => {
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isLoading}
+            disabled={isLoading || approvalPending}
           />
 
           {/* Send Button */}
@@ -290,7 +301,7 @@ const ChatBox = () => {
             onClick={handleSendMessage}
             className="p-2 rounded-full bg-blue-600 text-white ml-2 
                        disabled:opacity-50 flex items-center justify-center"
-            disabled={isLoading}
+            disabled={isLoading || approvalPending}
           >
             {isLoading ? (
               <ArrowPathIcon className="w-5 h-5 animate-spin" />
@@ -306,7 +317,7 @@ const ChatBox = () => {
                         disabled:opacity-50 ${
               isRecording ? "bg-blue-600" : "bg-gray-600"
             }`}
-            disabled={isLoading}
+            disabled={isLoading || approvalPending}
           >
             {isRecording ? (
               <StopIcon className="w-5 h-5" />

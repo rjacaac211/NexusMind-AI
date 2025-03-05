@@ -5,6 +5,7 @@ import markdown
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response
 from pydantic import BaseModel
+from typing import Optional
 
 from app.core.deep_research_agent import run_agent, reset_agent
 
@@ -19,23 +20,24 @@ async def start_research(req: ResearchRequest):
     if not req.topic.strip():
         raise HTTPException(status_code=400, detail="Topic is required.")
     try:
-        bot_message = await run_agent(req.topic)
-        return {"bot_message": bot_message}
+        result = await run_agent(req.topic)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 # ----------------- Resume Research Endpoint ----------------- #
 class ResumeRequest(BaseModel):
     topic: str
-    feedback: str
+    approved: Optional[bool] = None  # True if final approval, False if not approved
+    feedback: Optional[str] = ""
 
 @router.post("/resume")
 async def resume_research(req: ResumeRequest):
-    if not req.feedback.strip():
-        raise HTTPException(status_code=400, detail="Feedback is required.")
+    if req.approved is None and not req.feedback.strip():
+         raise HTTPException(status_code=400, detail="Feedback or approval decision is required.")
     try:
-        result = await run_agent(req.topic, req.feedback)
-        return {"result": result}
+        result = await run_agent(req.topic, approved=req.approved, feedback=req.feedback)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
