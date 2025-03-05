@@ -126,7 +126,10 @@ NexusMind-AI/
    ```bash
    docker compose up --build
    ```
-3. Access the web app at **http://localhost:3000**.
+3. Access the web app:
+   ```bash
+   http://localhost:3000
+   ```
 
 ## API Endpoints
 | Endpoint               | Method | Description |
