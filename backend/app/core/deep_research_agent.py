@@ -22,7 +22,7 @@ thread = {"configurable": {"thread_id": str(uuid.uuid4()),
                            "planner_provider": "openai",
                            "planner_model": "gpt-4o",
                            "writer_provider": "openai",
-                           "writer_model": "gpt-4o",
+                           "writer_model": "gpt-4o-mini",
                            "max_search_depth": 1,
                            }}
 
