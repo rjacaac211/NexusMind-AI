@@ -1,6 +1,11 @@
 # NexusMind AI — Deep Research Agent Web App
 
-​NexusMind AI is an advanced research assistant that automates the generation of in-depth research reports. By leveraging cutting-edge **natural language processing (NLP)**, **multi-turn feedback loops**, and modern web technologies, it enables users to interact dynamically to refine and produce structured reports. At its core, NexusMind AI integrates **Open Deep Research** from LangGraph, a customizable web research assistant that generates comprehensive reports on any topic. 
+​NexusMind AI is an advanced research assistant that automates the generation of in-depth research reports. By leveraging cutting-edge **natural language processing (NLP)**, **multi-turn feedback loops**, and modern web technologies, it enables users to interact dynamically to refine and produce structured reports. At its core, NexusMind AI integrates **Open Deep Research** from LangGraph, a customizable web research assistant that generates comprehensive reports on any topic.
+
+## Demo
+Watch a short demo of NexusMind AI in action:
+
+![NexusMind AI Demo](docs/demo.gif)
 
 ## Features
 - **Conversational AI for Research**: Users can input a research topic, receive structured outlines, and refine results through iterative feedback.
@@ -50,7 +55,6 @@ The diagram below illustrates the complete workflow:
 6. **Compile Final Report** – The final document is structured and prepared for download.  
 
 This multi-agent approach ensures a **customizable, iterative, and high-quality** research generation process.  
-
 
 ## Technologies Used
 ### Backend (FastAPI)
