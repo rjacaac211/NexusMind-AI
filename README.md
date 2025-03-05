@@ -39,8 +39,8 @@ Watch a short demo of NexusMind AI in action:
 
 NexusMind AI uses **two specialized agents** to generate high-quality research reports:  
 
-1. **Report Planning Agent** – This agent generates a structured **report plan** and sections based on the given topic.  
-2. **Final Report Generation Agent** – Once the research is complete, this agent **compiles and refines** the sections into a well-structured final report.  
+1. **Report Planning Agent** – This agent generates a structured report plan and sections based on the user’s topic, then iteratively refines the plan based on user feedback until it meets their satisfaction.  
+2. **Final Report Generation Agent** – Once the plan is approved, this agent compiles and refines the sections into a cohesive, well-structured final report.
 
 The diagram below illustrates the complete workflow:  
 
