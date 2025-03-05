@@ -241,7 +241,6 @@ const ChatBox = () => {
                       : "bg-gray-200 dark:bg-gray-700 dark:text-gray-100"
                   }`}
                 >
-                  <div className="text-sm font-semibold mb-1">{msg.sender}</div>
                   {msg.sender === "Nexus" ? (
                     <ReactMarkdown
                       className="prose dark:prose-invert max-w-none"
