@@ -100,9 +100,11 @@ const ChatBox = () => {
         ]);
         const response = await axios.post("http://localhost:8000/api/start_research", { topic: userMessage });
         const { bot_message, approval_required } = response.data;
+        const trimmedBotMessage = bot_message.split("Pass 'true'")[0].trim();
+        const finalMessage = `${trimmedBotMessage} Click "Yes" to confirm and proceed to generate the final report, or click "No" to provide additional feedback and request revisions.`;
         setMessages((prev) => [
           ...prev,
-          { sender: "Nexus", text: bot_message, approvalRequired: approval_required }
+          { sender: "Nexus", text: finalMessage, approvalRequired: approval_required }
         ]);
         setApprovalPending(approval_required);
         setStage("feedback");
